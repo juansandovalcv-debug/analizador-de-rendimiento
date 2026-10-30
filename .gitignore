@@ -1,0 +1,16 @@
+# Build
+bin/
+obj/
+publish/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+
+# Rider
+.idea/
+
+# Resultados
+TestResults/
+*.log

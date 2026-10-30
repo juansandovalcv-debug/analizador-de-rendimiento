@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="PcAnalyzer.App/PcAnalyzer.App.csproj" />
+  <Project Path="PcAnalyzer.Core/PcAnalyzer.Core.csproj" />
+</Solution>

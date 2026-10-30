@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>PcAnalyzer.App</RootNamespace>
+    <AssemblyName>PcAnalyzer</AssemblyName>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- x64 obligatorio: LibreHardwareMonitor carga binarios nativos y no admite 32 bits. -->
+    <PlatformTarget>x64</PlatformTarget>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>false</SelfContained>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ScottPlot.WinForms" Version="5.1.59" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PcAnalyzer.Core\PcAnalyzer.Core.csproj" />
+  </ItemGroup>
+
+</Project>
