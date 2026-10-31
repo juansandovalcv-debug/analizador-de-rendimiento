@@ -14,6 +14,7 @@ partial class MainForm
     private ToolStripStatusLabel lblStatus = null!;
     private ToolStripStatusLabel lblSpacer = null!;
     private ToolStripStatusLabel lblUptime = null!;
+    private ToolStripButton btnOverlay = null!;
     private ToolStripButton btnElevate = null!;
 
     protected override void Dispose(bool disposing)
@@ -38,6 +39,7 @@ partial class MainForm
         lblStatus = new ToolStripStatusLabel();
         lblSpacer = new ToolStripStatusLabel();
         lblUptime = new ToolStripStatusLabel();
+        btnOverlay = new ToolStripButton();
         btnElevate = new ToolStripButton();
 
         SuspendLayout();
@@ -85,6 +87,7 @@ partial class MainForm
             lblStatus,
             lblSpacer,
             lblUptime,
+            btnOverlay,
             btnElevate
         });
 
@@ -99,6 +102,12 @@ partial class MainForm
         // lblUptime
         lblUptime.ForeColor = Color.FromArgb(128, 136, 150);
         lblUptime.Text = string.Empty;
+
+        // btnOverlay
+        btnOverlay.DisplayStyle = ToolStripItemDisplayStyle.Text;
+        btnOverlay.ForeColor = Color.FromArgb(150, 160, 175);
+        btnOverlay.Text = "Modo compacto";
+        btnOverlay.ToolTipText = "Ventana flotante mínima para jugar";
 
         // btnElevate
         btnElevate.DisplayStyle = ToolStripItemDisplayStyle.Text;

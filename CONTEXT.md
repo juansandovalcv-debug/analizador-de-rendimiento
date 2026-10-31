@@ -55,6 +55,22 @@ Grid 2×3 en `MainForm.Designer.cs`. Detalle = nombre del componente + cifras. C
 
 Render: `PerformanceMonitor` dispara evento en hilo de fondo → `BeginInvoke` (`MainForm.PostToUi`). Cada tarjeta guarda su propio `List<double>`; cada tick hace `Plot.Clear()` + `Add.Signal` (API segura, no mutar arrays).
 
+## Modo compacto (overlay)
+
+`App/OverlayForm.cs`: form sin borde 280×104 @96dpi (escala con `DeviceDpi`), `TopMost`, `Opacity` 0.88,
+región redondeada, 4 barras dibujadas a mano (CPU/RAM/GPU/TEMP) con `TextRenderer`.
+
+- `WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW` en `CreateParams` + `ShowWithoutActivation`: no roba el foco
+  ni aparece en Alt+Tab. **Sin esto el overlay minimiza el juego al pulsarlo.**
+- Arrastrar → al soltar, `SnapToNearestCorner()` pega a la esquina más cercana del monitor.
+- Doble clic → `RestoreRequested`. Clic derecho → menú (opacidad, abrir panel, cerrar).
+- Al activarlo, `MainForm` se **minimiza** (no se oculta) para poder volver con Alt+Tab.
+  `MainForm.OnResize` cierra el overlay si el usuario restaura la ventana.
+- Atajo global `App/Native/HotKey.cs` (`RegisterHotKey` + `WndProc` WM_HOTKEY). **Ctrl+Alt+M está
+  ocupado en esta máquina** por otro programa, así que `TryRegister` prueba una lista
+  (Ctrl+Alt+M → +O → +P → +K → Ctrl+Shift+M) y la UI muestra la que quedó registrada.
+- Captura de pantalla del overlay: `CopyFromScreen`, **no** `PrintWindow` (es ventana por capas, sale negro).
+
 ## Bugs ya corregidos (no reintroducir)
 
 1. **GPU híbrida**: recorrer GPUs con `gpu = Max(hw)` hacía que la iGPU Intel (sin sensores) sobrescribiera con `null` la lectura de la RTX. Ahora `Higher(current, candidate)` ignora nulos.
@@ -82,4 +98,4 @@ Al probar la GUI: captura con `PrintWindow` + `SetProcessDPIAware` (sin eso el r
 ## Pendiente (sugerido, no hecho)
 
 Vista top procesos · alertas por umbral · persistencia SQLite · export CSV · tema claro · benchmark con puntuación.
-Archivos de apoyo: `README.md` (decisiones + limitaciones), `docs/panel.png`.
+Archivos de apoyo: `README.md` (decisiones + limitaciones), `docs/panel.png`, `docs/overlay.png`.

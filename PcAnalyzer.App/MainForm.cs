@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Security.Principal;
 using PcAnalyzer.App.Controls;
+using PcAnalyzer.App.Native;
 using PcAnalyzer.Core;
 using PcAnalyzer.Core.Models;
 
@@ -29,6 +30,15 @@ public partial class MainForm : Form
     private HardwareInfo? _hardware;
     private bool? _memoryIntegrity;
 
+    private OverlayForm? _overlay;
+    private Sample? _lastSample;
+    private string _tempDetail = string.Empty;
+    private bool _closing;
+    private bool _hotKeyRegistered;
+    private string _hotKeyLabel = string.Empty;
+
+    private const int ToggleHotKeyId = 0x4D43;
+
     public MainForm()
     {
         InitializeComponent();
@@ -39,6 +49,7 @@ public partial class MainForm : Form
 
         btnElevate.Visible = !_isElevated;
         btnElevate.Click += OnElevateClick;
+        btnOverlay.Click += (_, _) => ToggleOverlay();
     }
 
     private void BuildCards()
@@ -141,27 +152,29 @@ public partial class MainForm : Form
 
         // La temperatura de CPU necesita leer los MSR del procesador, y eso exige un
         // driver de kernel. La de GPU se lee por NVML/ADL y funciona sin permisos.
+        string tempDetail = (sample.CpuTempC, sample.GpuTempC) switch
+        {
+            (double cpuTemp, double gpuTemp) => $"CPU {cpuTemp:F0} °C  ·  GPU {gpuTemp:F0} °C",
+            (double cpuTemp, null) => $"CPU {cpuTemp:F0} °C",
+            (null, double gpuTemp) => $"GPU {gpuTemp:F0} °C  ·  CPU {CpuTempBlocker()}",
+            _ => $"sin sensores  ·  CPU {CpuTempBlocker()}"
+        };
+
         double? mainTemp = sample.CpuTempC ?? sample.GpuTempC;
 
         if (mainTemp is double temperature)
-        {
-            string detail = (sample.CpuTempC, sample.GpuTempC) switch
-            {
-                (double cpuTemp, double gpuTemp) => $"CPU {cpuTemp:F0} °C  ·  GPU {gpuTemp:F0} °C",
-                (double cpuTemp, null) => $"CPU {cpuTemp:F0} °C",
-                (null, double gpuTemp) => $"GPU {gpuTemp:F0} °C  ·  CPU {CpuTempBlocker()}",
-                _ => string.Empty
-            };
-
-            _tempCard.Push(temperature, $"{temperature:F0} °C", detail);
-        }
+            _tempCard.Push(temperature, $"{temperature:F0} °C", tempDetail);
         else
-        {
-            _tempCard.SetUnavailable($"sin sensores  ·  CPU {CpuTempBlocker()}");
-        }
+            _tempCard.SetUnavailable(tempDetail);
 
         var uptime = DateTime.Now - _startedAt;
         lblUptime.Text = $"activo {uptime:hh\\:mm\\:ss}  ·  {sample.Timestamp:HH:mm:ss}";
+
+        _lastSample = sample;
+        _tempDetail = tempDetail;
+
+        if (_overlay is { IsDisposed: false })
+            _overlay.UpdateSample(sample, tempDetail);
     }
 
     /// <summary>
@@ -174,6 +187,97 @@ public partial class MainForm : Form
             return "bloqueada por Integridad de memoria";
 
         return _isElevated ? "sin sensor en este equipo" : "requiere admin";
+    }
+
+    #region Modo compacto (overlay)
+
+    private void ToggleOverlay()
+    {
+        if (_overlay is { IsDisposed: false, Visible: true })
+            CloseOverlay();
+        else
+            OpenOverlay();
+    }
+
+    private void OpenOverlay()
+    {
+        if (_overlay is null || _overlay.IsDisposed)
+        {
+            _overlay = new OverlayForm();
+            _overlay.RestoreRequested += (_, _) => CloseOverlay();
+        }
+
+        _overlay.UpdateSample(_lastSample, _tempDetail);
+        _overlay.Show();
+        _overlay.PlaceAtCorner();
+
+        btnOverlay.Text = "Volver al panel";
+        lblStatus.Text = _hotKeyRegistered
+            ? $"Modo compacto  ·  {_hotKeyLabel} para volver"
+            : "Modo compacto  ·  doble clic en el overlay para volver";
+
+        // Se minimiza en vez de ocultarse: así sigue en la barra de tareas y se puede
+        // recuperar con Alt+Tab aunque el overlay se quede en segundo plano por un juego
+        // a pantalla completa exclusiva.
+        WindowState = FormWindowState.Minimized;
+    }
+
+    private void CloseOverlay()
+    {
+        if (_overlay is { IsDisposed: false })
+            _overlay.Hide();
+
+        btnOverlay.Text = "Modo compacto";
+
+        if (_closing)
+            return;
+
+        if (WindowState == FormWindowState.Minimized)
+            WindowState = FormWindowState.Normal;
+
+        Show();
+        Activate();
+
+        lblStatus.Text = "Muestreando cada 1 segundo";
+    }
+
+    protected override void OnResize(EventArgs e)
+    {
+        base.OnResize(e);
+
+        // Si el usuario restaura la ventana desde la barra de tareas, el overlay sobra.
+        if (!_closing && WindowState != FormWindowState.Minimized && _overlay is { IsDisposed: false, Visible: true })
+            CloseOverlay();
+    }
+
+    #endregion
+
+    protected override void OnHandleCreated(EventArgs e)
+    {
+        base.OnHandleCreated(e);
+
+        if (_hotKeyRegistered)
+            return;
+
+        // Ctrl+Alt+M suele estar ocupado por otra utilidad; se prueba una lista y se
+        // muestra la combinación que realmente quedó registrada.
+        _hotKeyRegistered = HotKey.TryRegister(Handle, ToggleHotKeyId, out string label);
+        _hotKeyLabel = label;
+
+        btnOverlay.ToolTipText = _hotKeyRegistered
+            ? $"Ventana flotante mínima para jugar ({label})"
+            : "Ventana flotante mínima para jugar (sin atajo: combinaciones ocupadas)";
+    }
+
+    protected override void WndProc(ref Message m)
+    {
+        if (m.Msg == HotKey.WmHotKey && m.WParam.ToInt32() == ToggleHotKeyId)
+        {
+            ToggleOverlay();
+            return;
+        }
+
+        base.WndProc(ref m);
     }
 
     private void PostToUi(Action action)
@@ -227,6 +331,20 @@ public partial class MainForm : Form
 
     protected override async void OnFormClosing(FormClosingEventArgs e)
     {
+        _closing = true;
+
+        if (_hotKeyRegistered)
+        {
+            HotKey.Unregister(Handle, ToggleHotKeyId);
+            _hotKeyRegistered = false;
+        }
+
+        if (_overlay is { IsDisposed: false })
+        {
+            _overlay.Close();
+            _overlay = null;
+        }
+
         _monitor.SampleReady -= OnSampleReady;
 
         try

@@ -29,6 +29,26 @@ O abre `PcAnalyzer.slnx` en Visual Studio y pulsa F5.
 y termina cuando la cierras. No la reinicia ni se queda en bucle (eso sería `dotnet watch`).
 En Visual Studio, F5 ejecuta directamente el `.exe` de `bin\Debug\...`, no `dotnet run`.
 
+## Modo compacto (overlay para jugar)
+
+El botón **Modo compacto** de la barra de estado (o el atajo global `Ctrl+Alt+O`)
+convierte la app en una ventana flotante de 280×104 que se queda en la esquina
+inferior derecha de la pantalla, siempre visible y semitransparente:
+
+![overlay](docs/overlay.png)
+
+- Muestra solo CPU, RAM, GPU y temperatura, con una barra y el valor de cada una.
+- La barra de temperatura cambia de color: verde hasta 60 °C, ámbar hasta 80 °C, rojo por encima.
+- **No roba el foco**: pulsarla no saca al juego del primer plano.
+- Se arrastra con el ratón y al soltar se pega a la esquina más cercana.
+- Doble clic → vuelve al panel completo. Clic derecho → opacidad (95/88/70/55 %), abrir panel o cerrar.
+- El atajo global funciona con el juego en primer plano. Como `Ctrl+Alt+M` suele estar
+  cogido por otras utilidades, la app prueba varias combinaciones en orden y muestra en la
+  barra de estado la que realmente consiguió registrar.
+
+El panel grande se **minimiza** (no se oculta) al entrar en modo compacto, así que siempre
+puedes volver con Alt+Tab aunque el overlay se quede debajo de un juego.
+
 ## Distribuir
 
 El `.exe` real ya existe en `bin\Debug\net10.0-windows10.0.19041.0\win-x64\PcAnalyzer.exe`.
@@ -59,12 +79,15 @@ PcAnalyzer.slnx
 │  ├─ Models/HardwareInfo.cs        Datos fijos del equipo
 │  ├─ HardwareInfoProvider.cs       Lectura única por WMI
 │  ├─ PerformanceMonitor.cs         Bucle de muestreo en hilo de fondo
+│  ├─ MemoryIntegrity.cs            Detecta si HVCI bloquea las temperaturas de CPU
 │  ├─ Native/NativeMethods.cs       GetSystemTimes, GlobalMemoryStatusEx, CallNtPowerInformation
 │  ├─ Native/Pdh.cs                 Envoltorio de PDH (contadores nativos)
 │  └─ Samplers/                     Un archivo por métrica
 └─ PcAnalyzer.App/                  WinForms: solo pinta
    ├─ MainForm.cs                   Orquesta y actualiza las tarjetas
    ├─ MainForm.Designer.cs          Chrome de la ventana (editable en el diseñador)
+   ├─ OverlayForm.cs                Ventana flotante del modo compacto
+   ├─ Native/HotKey.cs              Atajo global (RegisterHotKey)
    └─ Controls/MetricCard.cs        Tarjeta reutilizable con sparkline
 ```
 
@@ -128,6 +151,9 @@ quiere ver temperaturas.
 - La **red** suma todas las interfaces activas, incluidas VPN y adaptadores virtuales.
   El tráfico puenteado puede contarse dos veces.
 - `"% Disk Time"` puede pasar de 100 % en sistemas con varios discos; se recorta a 100.
+- El **modo compacto** no aparece sobre juegos en **pantalla completa exclusiva** (Direct3D
+  exclusivo): Windows no dibuja ninguna ventana encima en ese modo. Con "pantalla completa
+  sin bordes" (lo habitual hoy) funciona. Si no lo ves, cambia ese ajuste en el juego.
 
 ## Siguientes pasos sugeridos
 
