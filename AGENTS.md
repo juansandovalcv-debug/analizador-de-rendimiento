@@ -13,6 +13,11 @@ Reglas generales de trabajo: globales (`~/.config/opencode/AGENTS.md`); aquí so
 - **`PcAnalyzer.Core` no referencia WinForms.** Es la separación que permite testear.
 - Un sampler que falle no puede tumbar el panel: cada uno captura sus excepciones.
 
+## Ramas
+
+Trabajar en `versiones-de-prueba`, **nunca commitear directo a `main`**. `main` solo recibe
+merges cuando el usuario confirma que la versión funciona. Push a la rama tras cada cambio.
+
 ## Comandos
 
 ```powershell
