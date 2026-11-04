@@ -1,17 +1,7 @@
 # Reglas del proyecto
 
 Monitor de rendimiento en **C# / .NET 10 / WinForms**. Contexto técnico: `CONTEXT.md`.
-
-## Cómo trabajar aquí (ahorra contexto)
-
-1. **`grep` antes de `read`.** Nunca leer un archivo entero si basta una búsqueda.
-2. **Leer como máximo ~60 líneas** alrededor del cambio (`offset` + `limit`).
-3. **`edit` siempre; `write` solo para archivos nuevos.** Nunca reescribir un archivo entero
-   para cambiar tres líneas.
-4. **Compilar en silencio:** `.\build.ps1`. No pegar la salida de MSBuild.
-5. **Una sola captura de pantalla** al final y recortada. No verificar visualmente cada cambio.
-6. **Responder telegráfico:** sin recaps, sin resumen de lo ya hecho, sin repetir el código.
-7. **No explorar** el proyecto si la tarea nombra el archivo. Preguntar antes de tocar algo no pedido.
+Reglas generales de trabajo: globales (`~/.config/opencode/AGENTS.md`); aquí solo lo del proyecto.
 
 ## Reglas duras (no cambiar sin motivo)
 
