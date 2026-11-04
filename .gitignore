@@ -14,3 +14,6 @@ publish/
 # Resultados
 TestResults/
 *.log
+
+# Instrucciones locales del asistente (no forman parte del proyecto)
+AGENTS.md
